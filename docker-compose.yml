@@ -1,0 +1,43 @@
+# SullaWorks: two containers.
+#   sullaworks         the hub: inventory, change history, live view on :8770
+#   sullaworks-sentry  the eyes: sweeps the LAN and reports to the hub
+#
+# Run both on an always-on machine that sits on the network you want to watch.
+#   cp .env.example .env   # set SULLAWORKS_TOKEN
+#   docker compose up -d
+services:
+  sullaworks:
+    image: ghcr.io/merchantprotocol/sullaworks:latest
+    build: ./hub
+    container_name: sullaworks
+    restart: unless-stopped
+    ports:
+      - "${HUB_PORT:-8770}:8770"
+    environment:
+      SULLAWORKS_TOKEN: ${SULLAWORKS_TOKEN:?set SULLAWORKS_TOKEN in .env}
+      OFFLINE_AFTER: ${OFFLINE_AFTER:-600}
+    volumes:
+      - sullaworks-data:/data
+
+  sullaworks-sentry:
+    image: ghcr.io/merchantprotocol/sullaworks-sentry:latest
+    build: ./sentry
+    container_name: sullaworks-sentry
+    restart: unless-stopped
+    network_mode: host          # must see the real LAN, not a Docker bridge
+    cap_add: [NET_RAW, NET_ADMIN]
+    depends_on: [sullaworks]
+    environment:
+      HUB_URL: ${HUB_URL:-http://127.0.0.1:8770}
+      SULLAWORKS_TOKEN: ${SULLAWORKS_TOKEN}
+      SENTRY_ID: ${SENTRY_ID:-}
+      SENTRY_SUBNET: ${SENTRY_SUBNET:-}
+      SENTRY_IFACE: ${SENTRY_IFACE:-}
+      SWEEP_EVERY: ${SWEEP_EVERY:-120}
+      PORTS_EVERY: ${PORTS_EVERY:-3600}
+    volumes:
+      - sullaworks-spool:/var/lib/sullaworks-sentry
+
+volumes:
+  sullaworks-data:
+  sullaworks-spool:
