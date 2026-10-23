@@ -1,0 +1,24 @@
+# Recipe compose: the hub always; the sentry needs to sit on the LAN (bridged network or another device).
+services:
+  sullaworks:
+    image: ghcr.io/merchantprotocol/sullaworks:latest
+    restart: unless-stopped
+    ports:
+      - "8770:8770"
+    environment:
+      SULLAWORKS_TOKEN: ${SULLAWORKS_TOKEN}
+    volumes:
+      - data:/data
+  sullaworks-sentry:
+    image: ghcr.io/merchantprotocol/sullaworks-sentry:latest
+    restart: unless-stopped
+    network_mode: host
+    cap_add: [NET_RAW, NET_ADMIN]
+    environment:
+      HUB_URL: http://127.0.0.1:8770
+      SULLAWORKS_TOKEN: ${SULLAWORKS_TOKEN}
+    volumes:
+      - spool:/var/lib/sullaworks-sentry
+volumes:
+  data:
+  spool:

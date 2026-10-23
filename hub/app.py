@@ -240,6 +240,36 @@ def summary():
         }
 
 
+@app.get("/api/status")
+def status():
+    """Overall network health for the Sulla left-rail icon.
+
+    level: ok (green) · warn (orange, serious things to look at) · bad (red, actual compromise)
+           · unknown (no fresh data from any sentry).
+    """
+    now = time.time()
+    with db() as c:
+        q = lambda sql, *a: c.execute(sql, a).fetchone()[0]
+        last = q("SELECT MAX(last_seen) FROM sentries")
+        if not last or now - last > max(900, OFFLINE_AFTER):
+            return {"level": "unknown", "summary": "No sentry has reported recently"}
+        # Compromise: reserved for detectors that emit critical events (none ship yet).
+        crit = q("SELECT COUNT(*) FROM events WHERE severity='critical' AND at > ?", now - 86400)
+        if crit:
+            return {"level": "bad", "summary": f"{crit} sign{'s' if crit != 1 else ''} of compromise in the last 24h"}
+        risky = q(f"SELECT COUNT(*) FROM ports WHERE open=1 AND port IN ({','.join(map(str, RISKY))})")
+        new = q("SELECT COUNT(*) FROM devices WHERE label IS NULL AND first_seen > ?", now - 86400)
+        warn = []
+        if risky:
+            warn.append(f"{risky} risky port{'s' if risky != 1 else ''} open")
+        if new:
+            warn.append(f"{new} new unnamed device{'s' if new != 1 else ''}")
+        if warn:
+            return {"level": "warn", "summary": ", ".join(warn)}
+        online = q("SELECT COUNT(*) FROM devices WHERE online=1")
+        return {"level": "ok", "summary": f"All clear · {online} device{'s' if online != 1 else ''} online"}
+
+
 @app.get("/healthz")
 def healthz():
     return {"ok": True}

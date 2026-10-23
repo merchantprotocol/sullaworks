@@ -1,0 +1,12 @@
+# SullaWorks as a Sulla recipe (Use Case). Installed by Sulla Desktop from Postgres.
+slug: sullaworks
+name: SullaWorks
+description: AI-run network security. Maps every device on your network, fingerprints what it runs, and tells you what changed.
+version: 0.1.0
+# Left-rail app (contract in sulla-desktop "recipe rail apps"): click opens the hub; the icon
+# turns green/orange/red from the hub's /api/status (ok / warn / bad).
+rail:
+  label: SullaWorks
+  icon: "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l8 3.5v5c0 5-3.5 8.5-8 9.5-4.5-1-8-4.5-8-9.5v-5z'/><circle cx='12' cy='11' r='2.2'/><path d='M12 13.2V16'/></svg>"
+  open:   { port: 8770, path: "/" }
+  status: { port: 8770, path: "/api/status", every: 30 }
