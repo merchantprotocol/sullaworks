@@ -1,112 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SullaWorks — Live network</title>
-<style>
-  :root{--ink:#0f172a;--ink-2:#475569;--ink-3:#94a3b8;--line:rgba(15,23,42,.08);--accent:#4f46e5;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;
-    --font:'Inter',ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
-  *{box-sizing:border-box}
-  body{margin:0;font-family:var(--font);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased;min-height:100vh;
-    background:radial-gradient(1200px 700px at 30% 20%,#eef2ff 0%,transparent 60%),radial-gradient(900px 600px at 80% 80%,#f1f5f9 0%,transparent 60%),linear-gradient(180deg,#fbfcfe,#f3f5f9)}
-  .glass{background:rgba(255,255,255,.78);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7);box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 10px 30px -14px rgba(15,23,42,.25);border-radius:16px}
-  header{display:flex;align-items:center;gap:14px;padding:18px 22px}
-  .brand{display:flex;align-items:center;gap:10px;padding:8px 14px 8px 10px;font-weight:700;font-size:15px}
-  .mark{width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:grid;place-items:center}
-  .mark i{width:10px;height:10px;border-radius:50%;background:#fff;animation:beat 2s ease-in-out infinite}
-  @keyframes beat{50%{transform:scale(.7)}}
-  .live{font-size:12.5px;color:var(--ink-2);font-weight:500;padding-left:12px;border-left:1px solid var(--line);display:flex;align-items:center;gap:7px}
-  .live i{width:7px;height:7px;border-radius:50%;background:var(--ok)}
-  .live.stale i{background:var(--warn)}
-  .pills{margin-left:auto;display:flex;gap:10px}
-  .pill{padding:9px 14px;display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink-2)}
-  .pill b{font-size:18px;color:var(--ink)}
-  .pill .c{width:8px;height:8px;border-radius:50%}
-  main{display:grid;grid-template-columns:1fr 380px;gap:16px;padding:0 22px 22px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;align-content:start}
-  .dev{padding:14px 14px 12px;cursor:pointer;transition:transform .2s;position:relative}
-  .dev:hover{transform:translateY(-2px)}
-  .dev.off{opacity:.5}
-  .dev .st{position:absolute;right:14px;top:16px;width:8px;height:8px;border-radius:50%;background:var(--ok)}
-  .dev.off .st{background:var(--ink-3)}
-  .dev.risk{border-color:#fca5a5}
-  .dev b{display:block;font-size:14px;padding-right:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .dev .meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .ports{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
-  .port{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;background:linear-gradient(#f6e3b4,#e7c77a);border:1px solid #c9a24a;color:#5b4313}
-  .port.risky{background:#fef2f2;border-color:#fca5a5;color:#b91c1c}
-  .port.none{background:#f8fafc;border:1px dashed #cbd5e1;color:var(--ink-3);font-weight:500}
-  aside{padding:16px;align-self:start;position:sticky;top:16px;max-height:calc(100vh - 110px);overflow:auto}
-  h4{margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
-  .ev{display:grid;grid-template-columns:56px 8px 1fr;gap:9px;padding:8px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.4}
-  .ev:first-of-type{border-top:none}
-  .ev .t{font-family:var(--mono);font-size:11px;color:var(--ink-3);padding-top:2px}
-  .ev .d{width:8px;height:8px;border-radius:50%;margin-top:5px;background:var(--ink-3)}
-  .ev .d.warn{background:var(--warn)}.ev .d.bad{background:var(--bad)}
-  .empty{color:var(--ink-3);font-size:13px;padding:30px 0;text-align:center}
-  /* device drawer */
-  .shade{position:fixed;inset:0;background:rgba(15,23,42,.18);display:none}
-  .shade.on{display:block}
-  .drawer{position:fixed;right:22px;top:22px;bottom:22px;width:420px;padding:20px;overflow:auto;transform:translateX(460px);transition:transform .35s cubic-bezier(.22,.8,.2,1)}
-  .drawer.on{transform:none}
-  .drawer h2{margin:0;font-size:19px}
-  .drawer .k{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-top:4px}
-  .kv{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;font-size:13px;margin:14px 0}
-  .kv span{color:var(--ink-3)}.kv b{font-weight:500;font-family:var(--mono);font-size:12.5px;word-break:break-all}
-  table{width:100%;border-collapse:collapse;font-size:12.5px}
-  td,th{text-align:left;padding:6px 0;border-top:1px solid var(--line)}
-  th{font-size:11px;color:var(--ink-3);font-weight:600;border-top:none}
-  td.m{font-family:var(--mono)}
-  .lab{display:flex;gap:8px;margin-top:6px}
-  .lab input{flex:1;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-family:var(--font);font-size:13px}
-  .btn{font-family:var(--font);font-size:12.5px;font-weight:600;border-radius:9px;padding:8px 12px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:#fff}
-  .x{position:absolute;right:14px;top:14px;border:1px solid var(--line);background:#fff;border-radius:8px;width:28px;height:28px;cursor:pointer}
-</style>
-</head>
-<body>
-<header>
-  <div class="brand glass"><span class="mark"><i></i></span>SullaWorks<span class="live" id="live"><i></i><span id="live-t">connecting…</span></span></div>
-  <div class="pills" id="pills"></div>
-</header>
-<main>
-  <section class="grid" id="grid"><div class="empty">Waiting for the first sweep from a sentry…</div></section>
-  <aside class="glass"><h4>What changed</h4><div id="events"><div class="empty">Nothing yet.</div></div></aside>
-</main>
-<div class="shade" id="shade"></div>
-<div class="drawer glass" id="drawer"></div>
-<script>
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const ago=t=>{const s=Date.now()/1000-t;return s<60?Math.round(s)+'s':s<3600?Math.round(s/60)+'m':s<86400?Math.round(s/3600)+'h':Math.round(s/86400)+'d'};
-const pill=(c,b,t)=>`<div class="pill glass"><span class="c" style="background:var(--${c})"></span><b>${b}</b>${t}</div>`;
-async function j(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error(r.status);return r.json()}
-async function refresh(){
-  try{
-    const [s,devs,evs]=await Promise.all([j('/api/summary'),j('/api/devices'),j('/api/events?limit=80')]);
-    const sen=s.sentries[0];const fresh=sen&&s.now-sen.last_seen<600;
-    $('live').classList.toggle('stale',!fresh);
-    $('live-t').textContent=sen?`${sen.id} · ${sen.subnet} · last sweep ${ago(sen.last_seen)} ago`:'no sentry reporting yet';
-    $('pills').innerHTML=pill('ok',s.online,'online')+pill('accent',s.devices,'devices')+pill(s.new_today?'warn':'ok',s.new_today,'new today')+pill(s.risky_ports?'bad':'ok',s.risky_ports,'risky ports');
-    $('grid').innerHTML=devs.length?devs.map(d=>`<div class="dev glass ${d.online?'':'off'} ${d.risky.length?'risk':''}" onclick="openDev(${d.id})"><span class="st"></span>
-      <b>${esc(d.name)}</b><div class="meta">${esc(d.ip)} · ${esc(d.vendor||d.mac||'unknown vendor')}</div>
-      <div class="ports">${d.ports_scanned==null?'<span class="port none">scanning…</span>':d.ports.length?d.ports.map(p=>`<span class="port ${d.risky.includes(p.port)?'risky':''}" title="${esc(p.service)} ${esc(p.product)} ${esc(p.version)}">${p.port}</span>`).join(''):'<span class="port none">no open ports</span>'}</div></div>`).join(''):'<div class="empty">Waiting for the first sweep from a sentry…</div>';
-    $('events').innerHTML=evs.length?evs.map(e=>`<div class="ev"><span class="t">${ago(e.at)}</span><span class="d ${e.severity}"></span><span>${esc(e.detail)}</span></div>`).join(''):'<div class="empty">Nothing yet. Changes show up here.</div>';
-  }catch(e){$('live').classList.add('stale');$('live-t').textContent='hub unreachable'}
-}
-async function openDev(id){
-  const d=await j('/api/devices/'+id);
-  $('drawer').innerHTML=`<button class="x" onclick="closeDev()">×</button><h2>${esc(d.name)}</h2><div class="k">${esc(d.ip)} · ${d.online?'online':'offline'}</div>
-   <div class="lab"><input id="lab" placeholder="Give it a name…" value="${esc(d.label||'')}"><button class="btn" onclick="saveLabel(${d.id})">Save</button></div>
-   <div class="kv"><span>MAC</span><b>${esc(d.mac||'—')}</b><span>Vendor</span><b>${esc(d.vendor||'—')}</b><span>Hostname</span><b>${esc(d.hostname||'—')}</b>
-   <span>Announces</span><b>${esc(d.names.join(', ')||'—')}</b><span>OS guess</span><b>${esc(d.os||'—')}</b>
-   <span>First seen</span><b>${new Date(d.first_seen*1000).toLocaleString()}</b><span>Last seen</span><b>${ago(d.last_seen)} ago</b></div>
-   <h4>Open ports</h4>${d.ports.length?`<table><tr><th>Port</th><th>Service</th><th>Software</th></tr>${d.ports.map(p=>`<tr><td class="m" style="${d.risky.includes(p.port)?'color:var(--bad);font-weight:700':''}">${p.port}/${p.proto}</td><td>${esc(p.service)}</td><td>${esc(p.product)} ${esc(p.version)}</td></tr>`).join('')}</table>`:`<div class="empty">${d.ports_scanned==null?'Not scanned yet.':'No open ports.'}</div>`}
-   <h4 style="margin-top:16px">History</h4>${d.events.map(e=>`<div class="ev"><span class="t">${ago(e.at)}</span><span class="d ${e.severity}"></span><span>${esc(e.detail)}</span></div>`).join('')||'<div class="empty">Nothing yet.</div>'}`;
-  $('drawer').classList.add('on');$('shade').classList.add('on')}
-function closeDev(){$('drawer').classList.remove('on');$('shade').classList.remove('on')}
-async function saveLabel(id){await j(`/api/devices/${id}/label`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label:$('lab').value})});refresh();openDev(id)}
-$('shade').onclick=closeDev;addEventListener('keydown',e=>{if(e.key==='Escape')closeDev()});
-refresh();setInterval(refresh,5000);
-</script>
-</body>
-</html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SullaWorks — Network HUD</title>
+<link rel="preconnect" href="https://rsms.me/"><link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<link rel="stylesheet" href="/static/hud.css"><link rel="stylesheet" href="/static/live.css">
+<script defer src="/static/models.js"></script><script defer src="/static/live.js"></script></head><body class="hud-options" data-lens="observation">
+<div id="stage"><div id="world"><svg id="links"></svg></div></div>
+<div class="hud">
+<div class="tl glass"><span class="mark"><i></i></span><b>SullaWorks</b><span class="st"><i id="status-dot"></i><span id="st" role="status">Connecting to the hub…</span></span></div>
+<div class="tr" id="counts"></div>
+<div class="rail glass">
+    <button class="on" data-view="map" title="Map"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 7l3 3M17 7l-3 3M7 17l3-3M17 17l-3-3"/></svg></button>
+    <button data-view="table" title="Devices table"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="4" cy="6" r=".6"/></svg></button>
+    <button data-view="people" title="People"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.5 3-6 6.5-6s6.5 2.5 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.5c3 0 6 2 6 5.5"/></svg></button>
+    <button data-view="security" title="Security"><svg viewBox="0 0 24 24"><path d="M12 3l8 3.5v5c0 5-3.5 8.5-8 9.5-4.5-1-8-4.5-8-9.5v-5z"/><path d="m9 12 2 2 4-4"/></svg></button>
+    <button data-view="policies" title="Policies & procedures"><svg viewBox="0 0 24 24"><path d="M9 4h6l1 2h4v14H4V6h4z"/><path d="M9 13l2 2 4-4"/></svg></button>
+    <button data-view="alerts" title="Needs you"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button>
+    <button data-view="tickets" title="Tickets"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2.5a1.5 1.5 0 0 0 0 3V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4.5a1.5 1.5 0 0 0 0-3z"/><path d="M9 5v14"/></svg></button>
+    <button data-view="tonight" title="Tonight"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
+    <button data-view="report" title="Report"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></button>
+    </div>
+<div class="list glass" id="listpanel"><h5>Discovered</h5><div id="list"></div><p class="live-note" id="eyes"></p></div>
+<div class="view glass" id="view"><div class="vh"><h2 id="view-title"></h2><button class="btn" id="view-close">Back to map</button></div><div class="vb" id="view-body"></div></div>
+<button class="eye glass" id="fit"><div class="iris"></div><div class="t"><small>Network view</small><b>Fit to network</b></div></button>
+<div class="say glass on" id="say">Double-click a device to go inside · drag to pan · scroll to zoom</div>
+<div class="inspect glass" id="inspect"></div>
+<div class="empty-map glass" id="empty" hidden><span class="mark"><i></i></span><h2>Waiting for the first sentry report</h2><p>Your network will appear here as devices are discovered.</p></div>
+</div>
+<div id="bx"><div class="bx-stage" id="bx-stage"><div class="bx-world" id="bx-world"><svg class="bx-pcb" id="bx-pcb" viewBox="0 0 2400 1400"></svg></div></div>
+<div class="bx-tl bx-glass"><span class="bx-mark"><i></i></span><b>SullaWorks</b><button class="bx-up" id="bx-up">← Map</button><div class="bx-crumb" id="bx-crumb"></div></div>
+<div class="bx-tr" id="bx-pills"></div><div class="bx-insp bx-glass" id="bx-insp"></div>
+<div class="bx-say bx-glass on"><span class="m"></span><span>Observed services, not physical hardware.<br>CPU, memory &amp; process telemetry: Not connected yet.</span></div>
+<div class="bx-hint bx-glass">Drag to move · scroll to zoom · <kbd>Esc</kbd> back to map</div></div>
+</body></html>
